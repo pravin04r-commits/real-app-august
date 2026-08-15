@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "outDir": "./dist",
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@real/types": ["../../packages/types/src/index.ts"],
+      "@real/utils": ["../../packages/utils/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "tsup.config.ts"]
+}

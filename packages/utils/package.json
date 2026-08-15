@@ -1,0 +1,23 @@
+{
+  "name": "@real/utils",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo",
+    "test": "tsx src/logic.test.ts"
+  },
+  "dependencies": {
+    "@real/types": "*",
+    "date-fns": "^3.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "tsx": "^4.19.1"
+  }
+}

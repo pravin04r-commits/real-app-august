@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Space+Mono:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Playfair Display';
+  --font-sans: 'DM Sans';
+  --font-mono: 'Space Mono';
+
+  --real-crimson: #c0153a;
+  --real-pink: #ff2d6b;
+  --real-gold: #ffd700;
+  --real-purple: #7b2fbe;
+
+  /* Overridden per couple from their chosen aesthetic */
+  --couple-accent: #ff2d6b;
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-midnight text-blush font-sans antialiased;
+    background-image:
+      radial-gradient(ellipse 90% 60% at 50% -10%, rgba(255, 45, 107, 0.16), transparent 70%),
+      radial-gradient(ellipse 60% 50% at 90% 10%, rgba(123, 47, 190, 0.14), transparent 70%);
+    background-attachment: fixed;
+    min-height: 100dvh;
+  }
+
+  h1, h2, h3 {
+    @apply font-display;
+  }
+
+  ::selection {
+    @apply bg-hot-pink/40 text-white;
+  }
+
+  /* Focus rings stay visible — this app is used one-handed, at night, in bed. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-hot-pink ring-offset-2 ring-offset-midnight;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-white/10 bg-charcoal/70 backdrop-blur-sm shadow-lift;
+  }
+
+  .card-hover {
+    @apply transition-all duration-200 hover:border-hot-pink/40 hover:shadow-glow;
+  }
+
+  .label {
+    @apply text-[11px] uppercase tracking-[0.22em] text-ash;
+  }
+
+  .stat-number {
+    @apply font-display text-4xl font-extrabold leading-none;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-white/12 bg-slate/60 px-4 py-3 text-blush
+           placeholder:text-ash/60 transition-colors
+           focus:border-hot-pink/60 focus:outline-none focus:ring-2 focus:ring-hot-pink/30;
+  }
+
+  .divider {
+    @apply h-px w-full bg-gradient-to-r from-transparent via-white/12 to-transparent;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-real-gradient bg-clip-text text-transparent;
+  }
+
+  .text-gold-gradient {
+    @apply bg-gold-gradient bg-clip-text text-transparent;
+  }
+
+  .safe-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 5.5rem);
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Respect the user's motion preference — the heartbeat is charming, not mandatory. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

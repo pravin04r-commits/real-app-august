@@ -1,0 +1,26 @@
+# Render blueprint for the R.E.A.L. API.
+# Deploy: Render Dashboard > New > Blueprint > point at this repo.
+services:
+  - type: web
+    name: real-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    plan: free
+    region: singapore
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      # Set these in the Render dashboard — never commit them.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: WEB_ORIGIN
+        sync: false

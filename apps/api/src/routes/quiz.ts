@@ -15,7 +15,7 @@ import {
   saveQuizResult,
   scoreCompatibility,
   scoreLoveLanguage,
-  setLoveLanguage,
+  setLoveLanguages,
 } from '../services/quiz.service.js';
 import { earn } from '../services/spark.service.js';
 import { log } from '../lib/logger.js';
@@ -57,14 +57,14 @@ quizRouter.post(
 
     if (kind === 'love_language') {
       const scored = scoreLoveLanguage(answers);
-      await setLoveLanguage(me.id, scored.language);
+      await setLoveLanguages(me.id, scored.languages);
 
       const saved = await saveQuizResult({
         coupleId: couple.id,
         userId: me.id,
         kind,
         answers,
-        resultLabel: scored.label,
+        resultLabel: scored.labels.join(' + '),
       });
 
       await earn({
@@ -79,11 +79,11 @@ quizRouter.post(
       const partner = req.partner;
       let insight: string | null = null;
 
-      if (partner?.love_language && aiEnabled) {
+      if (partner?.love_languages?.length && aiEnabled) {
         try {
           insight = await loveLanguageInsight(
-            { display_name: me.display_name, love_language: scored.language },
-            { display_name: partner.display_name, love_language: partner.love_language }
+            { display_name: me.display_name, love_languages: scored.languages },
+            { display_name: partner.display_name, love_languages: partner.love_languages }
           );
         } catch (error) {
           log.warn('Love language insight unavailable', {
@@ -94,9 +94,11 @@ quizRouter.post(
 
       created(res, {
         language: scored.language,
+        languages: scored.languages,
         label: scored.label,
+        labels: scored.labels,
         tally: scored.tally,
-        partner_language: partner?.love_language ?? null,
+        partner_languages: partner?.love_languages ?? [],
         insight,
         sparks_earned: SPARK_RULES.QUIZ_COMPLETED,
       });

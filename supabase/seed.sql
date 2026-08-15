@@ -62,11 +62,11 @@ on conflict do nothing;
 --   returning id into test_couple;
 --
 --   update public.users set couple_id = test_couple, display_name = 'Partner A',
---     love_language = 'time', personality_tag = 'The chaotic one', onboarding_done = true
+--     love_languages = array['time','touch'], personality_tag = 'The chaotic one', onboarding_done = true
 --   where id = partner_a;
 --
 --   update public.users set couple_id = test_couple, display_name = 'Partner B',
---     love_language = 'words', personality_tag = 'The planner', onboarding_done = true
+--     love_languages = array['words'], personality_tag = 'The planner', onboarding_done = true
 --   where id = partner_b;
 --
 --   insert into public.spark_transactions (user_id, couple_id, amount, direction, source, note)

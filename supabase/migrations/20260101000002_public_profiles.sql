@@ -108,48 +108,66 @@ where slug is not null;
 
 -- ───────────────────────────────────────────────────────────────
 -- STORAGE — avatars (public read), proofs + memories (couple only)
+--
+-- `storage.objects` is owned by `supabase_storage_admin`, and on some
+-- projects the SQL Editor role is not a member of it. Creating these
+-- policies then fails with "must be owner of table objects" — which,
+-- because the editor runs the whole script in one transaction, would
+-- roll back every table above it.
+--
+-- So the whole storage block is tolerant: if permission is denied it
+-- raises a notice and moves on. File uploads are not wired up in v1
+-- anyway; you can create the buckets in the dashboard later.
 -- ───────────────────────────────────────────────────────────────
-insert into storage.buckets (id, name, public)
-values
-  ('avatars', 'avatars', true),
-  ('proofs', 'proofs', false),
-  ('memories', 'memories', false)
-on conflict (id) do nothing;
+do $$
+declare
+  policy_sql text;
+  statements text[] := array[
+    $sql$create policy "avatars are publicly readable" on storage.objects
+      for select to anon, authenticated
+      using (bucket_id = 'avatars')$sql$,
 
--- Path convention: <couple_id>/<filename> for proofs and memories,
--- <user_id>/<filename> for avatars.
+    $sql$create policy "users manage their own avatar" on storage.objects
+      for all to authenticated
+      using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text)
+      with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text)$sql$,
 
-drop policy if exists "avatars are publicly readable" on storage.objects;
-create policy "avatars are publicly readable" on storage.objects
-  for select to anon, authenticated
-  using (bucket_id = 'avatars');
+    $sql$create policy "couple reads own private files" on storage.objects
+      for select to authenticated
+      using (bucket_id in ('proofs','memories')
+             and (storage.foldername(name))[1] = public.current_couple_id()::text)$sql$,
 
-drop policy if exists "users manage their own avatar" on storage.objects;
-create policy "users manage their own avatar" on storage.objects
-  for all to authenticated
-  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text)
-  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+    $sql$create policy "couple writes own private files" on storage.objects
+      for insert to authenticated
+      with check (bucket_id in ('proofs','memories')
+             and (storage.foldername(name))[1] = public.current_couple_id()::text)$sql$,
 
-drop policy if exists "couple reads own private files" on storage.objects;
-create policy "couple reads own private files" on storage.objects
-  for select to authenticated
-  using (
-    bucket_id in ('proofs', 'memories')
-    and (storage.foldername(name))[1] = public.current_couple_id()::text
-  );
+    $sql$create policy "couple deletes own private files" on storage.objects
+      for delete to authenticated
+      using (bucket_id in ('proofs','memories')
+             and (storage.foldername(name))[1] = public.current_couple_id()::text)$sql$
+  ];
+begin
+  -- Buckets. Path convention: <couple_id>/<file> for private buckets,
+  -- <user_id>/<file> for avatars.
+  begin
+    insert into storage.buckets (id, name, public)
+    values ('avatars','avatars',true), ('proofs','proofs',false), ('memories','memories',false)
+    on conflict (id) do nothing;
+  exception
+    when insufficient_privilege or undefined_table then
+      raise notice 'R.E.A.L.: could not create storage buckets — create them in the dashboard when you add uploads.';
+  end;
 
-drop policy if exists "couple writes own private files" on storage.objects;
-create policy "couple writes own private files" on storage.objects
-  for insert to authenticated
-  with check (
-    bucket_id in ('proofs', 'memories')
-    and (storage.foldername(name))[1] = public.current_couple_id()::text
-  );
-
-drop policy if exists "couple deletes own private files" on storage.objects;
-create policy "couple deletes own private files" on storage.objects
-  for delete to authenticated
-  using (
-    bucket_id in ('proofs', 'memories')
-    and (storage.foldername(name))[1] = public.current_couple_id()::text
-  );
+  -- Policies, each independently tolerant.
+  foreach policy_sql in array statements loop
+    begin
+      execute policy_sql;
+    exception
+      when duplicate_object then
+        null; -- already there, fine
+      when insufficient_privilege or undefined_table then
+        raise notice 'R.E.A.L.: skipped a storage policy (needs owner rights). Set it in the dashboard when you add uploads.';
+    end;
+  end loop;
+end $$;

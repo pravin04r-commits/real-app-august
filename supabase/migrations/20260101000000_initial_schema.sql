@@ -48,13 +48,21 @@ create table if not exists public.users (
   id               uuid primary key references auth.users (id) on delete cascade,
   display_name     text,
   avatar_url       text,
-  love_language    text check (love_language in ('words','acts','gifts','time','touch')),
+  love_languages   text[] not null default '{}',
   personality_tag  text,
   couple_id        uuid references public.couples (id) on delete set null,
   spark_balance    integer not null default 0 check (spark_balance >= 0),
   onboarding_done  boolean not null default false,
-  created_at       timestamptz not null default now()
+  created_at       timestamptz not null default now(),
+  -- People rarely have exactly one. Store every language they pick,
+  -- and reject anything outside the known five.
+  constraint users_love_languages_valid check (
+    love_languages <@ array['words','acts','gifts','time','touch']::text[]
+  )
 );
+
+comment on column public.users.love_languages is 'Zero or more of: words, acts, gifts, time, touch.';
+comment on column public.users.personality_tag is 'Free text — chosen from suggestions or written by the user.';
 
 comment on column public.users.spark_balance is 'Derived from spark_transactions. Never write this directly — insert a transaction.';
 

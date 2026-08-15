@@ -176,7 +176,9 @@ const LANGUAGE_LABELS: Record<LoveLanguage, string> = {
 
 export function scoreLoveLanguage(answers: Record<string, string | number>): {
   language: LoveLanguage;
+  languages: LoveLanguage[];
   label: string;
+  labels: string[];
   tally: Record<LoveLanguage, number>;
 } {
   const tally: Record<LoveLanguage, number> = { words: 0, acts: 0, gifts: 0, time: 0, touch: 0 };
@@ -187,12 +189,20 @@ export function scoreLoveLanguage(answers: Record<string, string | number>): {
     }
   }
 
-  const winner = (Object.entries(tally) as Array<[LoveLanguage, number]>).sort(
-    (a, b) => b[1] - a[1]
-  )[0];
+  const ranked = (Object.entries(tally) as Array<[LoveLanguage, number]>).sort((a, b) => b[1] - a[1]);
+  const topScore = ranked[0]?.[1] ?? 0;
 
-  const language = winner?.[0] ?? 'time';
-  return { language, label: LANGUAGE_LABELS[language], tally };
+  // Ties are real, not noise — someone can genuinely lead with two.
+  const languages = topScore > 0 ? ranked.filter(([, n]) => n === topScore).map(([l]) => l) : ['time' as LoveLanguage];
+  const language = languages[0] ?? 'time';
+
+  return {
+    language,
+    languages,
+    label: LANGUAGE_LABELS[language],
+    labels: languages.map((l) => LANGUAGE_LABELS[l]),
+    tally,
+  };
 }
 
 /**
@@ -307,8 +317,8 @@ export async function latestResults(coupleId: string, kind: QuizKind): Promise<Q
   return latest;
 }
 
-export async function setLoveLanguage(userId: string, language: LoveLanguage): Promise<void> {
-  const { error } = await db.from('users').update({ love_language: language }).eq('id', userId);
+export async function setLoveLanguages(userId: string, languages: LoveLanguage[]): Promise<void> {
+  const { error } = await db.from('users').update({ love_languages: languages }).eq('id', userId);
   if (error) throw fromPostgrest(error);
 }
 

@@ -22,7 +22,8 @@ meRouter.get(
 const updateProfileSchema = z.object({
   display_name: z.string().trim().min(1).max(40).optional(),
   avatar_url: z.string().url().nullable().optional(),
-  love_language: z.enum(LOVE_LANGUAGES).optional(),
+  // People rarely have exactly one — accept every language they pick.
+  love_languages: z.array(z.enum(LOVE_LANGUAGES)).max(5).optional(),
   personality_tag: z.string().trim().max(40).optional(),
   onboarding_done: z.boolean().optional(),
 });

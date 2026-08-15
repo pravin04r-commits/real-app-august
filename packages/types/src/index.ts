@@ -58,7 +58,7 @@ export interface User {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
-  love_language: LoveLanguage | null;
+  love_languages: LoveLanguage[];
   personality_tag: string | null;
   couple_id: string | null;
   spark_balance: number;
@@ -342,7 +342,7 @@ export type APIErrorCode = (typeof API_ERROR_CODES)[number];
 export interface UpdateProfilePayload {
   display_name?: string;
   avatar_url?: string | null;
-  love_language?: LoveLanguage;
+  love_languages?: LoveLanguage[];
   personality_tag?: string;
 }
 

@@ -95,15 +95,15 @@ spark_reward is between 30 and 80 based on effort.`,
 
 /** Cross-map both partners' love languages into something actionable. */
 export async function loveLanguageInsight(
-  me: Pick<User, 'display_name' | 'love_language'>,
-  partner: Pick<User, 'display_name' | 'love_language'>
+  me: Pick<User, 'display_name' | 'love_languages'>,
+  partner: Pick<User, 'display_name' | 'love_languages'>
 ): Promise<string> {
   return complete(
     VOICE,
     `Cross-map these two love languages and give practical, specific advice.
 
-${me.display_name ?? 'Partner A'} gives and receives love through: ${languageLabel(me.love_language)}
-${partner.display_name ?? 'Partner B'} gives and receives love through: ${languageLabel(partner.love_language)}
+${me.display_name ?? 'Partner A'} gives and receives love through: ${languageLabels(me.love_languages)}
+${partner.display_name ?? 'Partner B'} gives and receives love through: ${languageLabels(partner.love_languages)}
 
 Write 3 short paragraphs max:
 1. Where they naturally click (be specific, not generic)
@@ -178,15 +178,20 @@ of them know it — never imply it is a real assessment of their relationship.`,
 
 /* ── helpers ─────────────────────────────────────────────────── */
 
-function languageLabel(l: LoveLanguage | null): string {
-  const map: Record<LoveLanguage, string> = {
-    words: 'words of affirmation',
-    acts: 'acts of service',
-    gifts: 'receiving gifts',
-    time: 'quality time',
-    touch: 'physical touch',
-  };
-  return l ? map[l] : 'not yet chosen';
+const LANGUAGE_WORDS: Record<LoveLanguage, string> = {
+  words: 'words of affirmation',
+  acts: 'acts of service',
+  gifts: 'receiving gifts',
+  time: 'quality time',
+  touch: 'physical touch',
+};
+
+/** People often lead with more than one. Render the whole set readably. */
+function languageLabels(languages: LoveLanguage[] | null | undefined): string {
+  if (!languages || languages.length === 0) return 'not yet chosen';
+  const words = languages.map((l) => LANGUAGE_WORDS[l]);
+  if (words.length === 1) return words[0] as string;
+  return `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`;
 }
 
 function clampReward(value: unknown): number {

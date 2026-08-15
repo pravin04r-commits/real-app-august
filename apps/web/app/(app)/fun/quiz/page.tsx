@@ -17,9 +17,11 @@ interface Question {
 
 interface QuizResponse {
   language: LoveLanguage;
+  languages: LoveLanguage[];
   label: string;
+  labels: string[];
   tally: Record<LoveLanguage, number>;
-  partner_language: LoveLanguage | null;
+  partner_languages: LoveLanguage[];
   insight: string | null;
   sparks_earned: number;
 }
@@ -121,8 +123,15 @@ function Result({ result }: { result: QuizResponse }) {
   return (
     <div className="space-y-4 pb-6">
       <Card glow className="text-center">
-        <p className="label">You receive love through</p>
-        <p className="mt-3 font-display text-3xl font-extrabold text-gradient">{result.label}</p>
+        <p className="label">
+          {result.labels.length > 1 ? 'You receive love through both' : 'You receive love through'}
+        </p>
+        <p className="mt-3 font-display text-3xl font-extrabold text-gradient">
+          {result.labels.join(' + ')}
+        </p>
+        {result.labels.length > 1 && (
+          <p className="mt-2 text-xs text-ash">A dead heat. Both are genuinely you.</p>
+        )}
         <Badge tone="gold">+{result.sparks_earned} ✨</Badge>
       </Card>
 
@@ -154,7 +163,7 @@ function Result({ result }: { result: QuizResponse }) {
       ) : (
         <Card>
           <p className="text-sm leading-relaxed text-ash">
-            {result.partner_language
+            {result.partner_languages.length > 0
               ? 'Cross-mapping is unavailable right now. Your result is saved either way.'
               : 'Once your partner takes this too, we cross-map both results and tell you exactly where you keep misreading each other.'}
           </p>

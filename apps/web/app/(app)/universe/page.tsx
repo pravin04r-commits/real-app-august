@@ -5,6 +5,7 @@ import { MOOD_EMOJI, MOOD_LABELS } from '@real/types';
 import { formatSparks, percent, pluralize } from '@real/utils';
 import { Badge, Card, EmptyState, ProgressBar, Skeleton, Stat } from '@/components/ui';
 import { useUniverse } from '@/hooks/useUniverse';
+import { PartnerSeatCard } from '@/components/dashboard/PartnerSeatCard';
 
 /**
  * The Universe — the couple's HQ.
@@ -145,15 +146,7 @@ export default function UniversePage() {
         </Card>
       )}
 
-      {!partner && (
-        <Card className="border-gold/30 bg-gold/5 text-center">
-          <p className="text-2xl">🪑</p>
-          <p className="mt-2 font-display text-lg font-bold">One empty seat</p>
-          <p className="mt-1 text-sm text-ash">
-            Your partner has not claimed their code yet. Everything is a bit quiet until they do.
-          </p>
-        </Card>
-      )}
+      {!partner && <PartnerSeatCard couple={couple} />}
     </div>
   );
 }

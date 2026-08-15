@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { allowedOrigins, env, isProd } from './config/env.js';
+import { allowedOrigins, env, isProd, normalizeOrigin } from './config/env.js';
 import { log } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { api } from './routes/index.js';
@@ -13,15 +13,29 @@ const app = express();
 app.set('trust proxy', 1);
 
 app.use(helmet());
+// Vercel gives every deployment its own hostname. If the configured origin is
+// itself on vercel.app, preview builds of the same app should work too —
+// otherwise every preview deploy looks broken for no visible reason.
+const allowVercelHosts = allowedOrigins.some((o) => o.endsWith('.vercel.app'));
+
 app.use(
   cors({
     origin(origin, callback) {
       // Same-origin, curl and server-to-server calls have no Origin header.
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      // Vercel preview deploys
-      if (!isProd && origin.endsWith('.vercel.app')) return callback(null, true);
-      return callback(new Error(`Origin ${origin} is not allowed`));
+
+      const candidate = normalizeOrigin(origin);
+      if (allowedOrigins.includes(candidate)) return callback(null, true);
+      if ((allowVercelHosts || !isProd) && candidate.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
+
+      // Deliberately not an Error. Throwing here produces a 500 carrying no CORS
+      // headers, which the browser reports only as "preflight failed" — telling
+      // you nothing about the mismatch. Refuse quietly and log the specifics, so
+      // the reason is visible in the server logs instead of guessed at.
+      log.warn('Blocked a cross-origin request', { received: candidate, allowed: allowedOrigins });
+      return callback(null, false);
     },
     credentials: true,
   })
@@ -52,7 +66,19 @@ app.use('/ai', aiLimiter);
 app.use(generalLimiter);
 
 app.get('/health', (_req, res) => {
-  res.json({ ok: true, data: { status: 'alive', service: 'real-api', time: new Date().toISOString() } });
+  res.json({
+    ok: true,
+    data: {
+      status: 'alive',
+      service: 'real-api',
+      time: new Date().toISOString(),
+      node: process.versions.node,
+      // Exposed on purpose: a CORS mismatch is otherwise invisible from outside,
+      // and these are hostnames, not secrets. Being able to read back what the
+      // server actually loaded turns a guessing game into one request.
+      allowedOrigins,
+    },
+  });
 });
 
 app.get('/', (_req, res) => {

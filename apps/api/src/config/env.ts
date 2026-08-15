@@ -43,8 +43,20 @@ if (!parsed.success) {
 
 export const env = parsed.data;
 
+/**
+ * Browsers send Origin without a trailing slash and lowercased. A value pasted
+ * from a dashboard often has one, or stray whitespace — and a single character
+ * of difference reads to the browser as a blanket CORS refusal with no clue as
+ * to why. Normalise both sides so a trailing slash cannot cost an evening.
+ */
+export function normalizeOrigin(value: string): string {
+  return value.trim().replace(/\/+$/, '').toLowerCase();
+}
+
 /** Multiple origins allowed, comma separated (preview deploys). */
-export const allowedOrigins = env.WEB_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean);
+export const allowedOrigins = env.WEB_ORIGIN.split(',')
+  .map(normalizeOrigin)
+  .filter(Boolean);
 
 export const isProd = env.NODE_ENV === 'production';
 export const aiEnabled = Boolean(env.ANTHROPIC_API_KEY && env.ANTHROPIC_API_KEY.length > 10);

@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { isConfigured } from '@/lib/env';
+import { SetupNotice } from '@/components/SetupNotice';
 
 const FEATURES = [
   { emoji: '💑', title: 'Two people. That is the whole list.', body: 'One couple code. Once your partner claims it, the door closes. No third wheel, ever.' },
@@ -10,6 +12,8 @@ const FEATURES = [
 ];
 
 export default function LandingPage() {
+  if (!isConfigured) return <SetupNotice />;
+
   return (
     <main className="mx-auto max-w-lg px-5 pb-20">
       <section className="pt-16 text-center">

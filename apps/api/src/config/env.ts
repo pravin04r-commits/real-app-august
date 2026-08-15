@@ -14,6 +14,22 @@ const schema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
 });
 
+/**
+ * @supabase/supabase-js reaches for a native global WebSocket, which only
+ * exists from Node 22. On Node 20 the server builds and starts, then dies on
+ * the first createClient() call with a stack trace deep inside realtime-js.
+ * Check it here instead, where the message can actually say what to do.
+ */
+const majorNode = Number.parseInt(process.versions.node.split('.')[0] ?? '0', 10);
+if (majorNode < 22) {
+  console.error(
+    `\n🔴 R.E.A.L. API needs Node 22 or newer — this is Node ${process.versions.node}.\n` +
+      `The Supabase client requires a native WebSocket, which Node 20 does not have.\n` +
+      `Docker: use the node:22-alpine base image. Locally: nvm install 22 && nvm use 22.\n`
+  );
+  process.exit(1);
+}
+
 const parsed = schema.safeParse(process.env);
 
 if (!parsed.success) {

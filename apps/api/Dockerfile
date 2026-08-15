@@ -1,9 +1,12 @@
 # ── R.E.A.L. API — Render deployment ───────────────────────────
+# Node 22, not 20. @supabase/supabase-js reaches for a native global
+# WebSocket, which only exists from Node 22 onward — on Node 20 the
+# server builds fine and then dies on the first createClient() call.
 # Built from the monorepo ROOT, not from this folder:
 #   docker build -f apps/api/Dockerfile .
 # render.yaml already sets dockerContext: . for exactly this reason.
 
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Copy manifests first so Docker can cache the install layer.
@@ -21,7 +24,7 @@ COPY apps/api ./apps/api
 RUN npm run build --workspace=@real/api
 
 # ── runtime ────────────────────────────────────────────────────
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
